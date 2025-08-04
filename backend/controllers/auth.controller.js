@@ -16,7 +16,7 @@ const generateTokens = (userId) => {
     };
 };
 
-//Saving referesh tokens into redis database
+//Saving refresh tokens into redis database
 const storeRefreshToken = async (userId, refreshToken) => {
     await redis.set(
         `refresh_token : ${userId}`,
