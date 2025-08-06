@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon backend/server.js",
-    "start": "node backend/server.js",
-    "build": "npm install && npm install --prefix frontend && npx --prefix frontend vite build"
+  "dev": "nodemon backend/server.js",
+  "start": "node backend/server.js",
+  "build": "npm install && npm install --prefix frontend/frontend && npx --prefix frontend/frontend vite build"
   },
   "keywords": [],
   "author": "",
