@@ -3,17 +3,18 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-   "scripts": {
-   "dev":"nodemon backend/server.js",
-   "start":"node backend/server.js",
-   "build":"npm install && npm install --prefix frontend && npm run build --prefix frontend"
+  "scripts": {
+    "dev": "nodemon backend/server.js",
+    "start": "node backend/server.js",
+    "build": "npm install && npm install --prefix frontend && npx --prefix frontend vite build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "vite": "^7.0.6"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
