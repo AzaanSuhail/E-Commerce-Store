@@ -7,7 +7,7 @@
   "dev": "nodemon backend/server.js",
   "start": "node backend/server.js",
   "build": "npm ci && npm ci --prefix frontend && npx --prefix frontend vite build"
-}
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
