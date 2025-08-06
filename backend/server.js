@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-
+improt path from 'path';
 import authRoutes from './routes/auth.route.js';
 import productRoutes from './routes/product.route.js';
 import cartRoutes from './routes/cart.route.js';
@@ -16,9 +16,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const __dirname = path.resolve();
+
 app.use(express.json({limit: "10mb"})); //& it allows to parse the body of the request & now we can upload the image upto 50mb
 app.use(cookieParser());
 
+
+if (process.env.NODE_ENV === "production") {
+	app.use(express.static(path.join(__dirname, "/frontend/dist")));
+
+	app.get("*", (req, res) => {
+		res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
+	});
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products',productRoutes); 
