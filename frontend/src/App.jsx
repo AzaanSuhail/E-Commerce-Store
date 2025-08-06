@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import HomePage from "./pages/HomePage";
+import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import CategoryPage from "./pages/CategoryPage";
@@ -14,12 +15,10 @@ import CartPage from "./pages/CartPage";
 import { useCartStore } from "./stores/useCartStore";
 import PurchaseSuccessPage from "./pages/PurchaseSuccessPage";
 import PurchaseCancelPage from "./pages/PurchaseCancelPage";
-import SignUpPage from "./pages/SignUpPage";
 
 function App() {
 	const { user, checkAuth, checkingAuth } = useUserStore();
 	const { getCartItems } = useCartStore();
-
 	useEffect(() => {
 		checkAuth();
 	}, [checkAuth]);
@@ -34,7 +33,6 @@ function App() {
 
 	return (
 		<div className='min-h-screen bg-gray-900 text-white relative overflow-hidden'>
-
 			{/* Background gradient */}
 			<div className='absolute inset-0 overflow-hidden'>
 				<div className='absolute inset-0'>
@@ -44,11 +42,9 @@ function App() {
 
 			<div className='relative z-50 pt-20'>
 				<Navbar />
-        
-        {/* //^ Only one route will be active at a time */}
 				<Routes>
 					<Route path='/' element={<HomePage />} />
-					<Route path='/signup' element={!user ? <SignUpPage />  : <Navigate to='/' />} />
+					<Route path='/signup' element={!user ? <SignUpPage /> : <Navigate to='/' />} />
 					<Route path='/login' element={!user ? <LoginPage /> : <Navigate to='/' />} />
 					<Route
 						path='/secret-dashboard'
