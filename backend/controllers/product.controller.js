@@ -5,7 +5,7 @@ import Product from "../models/product.model.js";
 export const getAllProducts = async (req, res) => {
     try {
         const products = await Product.find({}); //find all products
-        res.json(products);
+        res.json({products});
     }
     catch (error) {
         console.log("Error in get all products controller", error);
@@ -13,6 +13,8 @@ export const getAllProducts = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 }
+
+
 
 export const getFeaturedProducts = async (req, res) => {
     try {
@@ -45,6 +47,12 @@ export const createProduct = async (req, res) => {
         if (image) {
             cloudinaryResponse = await cloudinary.uploader.upload(image, { folder: "products" }); //upload the image to the cloudinary that admin pass
         }
+        
+        
+        if (!name || !description || !price || !image || !category) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+        
         const product = await Product.create({
             name,
             description,
@@ -57,10 +65,11 @@ export const createProduct = async (req, res) => {
         res.status(201).json(product);
     }
     catch (error) {
-        console.log("Error in create product controller", error);
+        console.log("Error in create product controller ", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 }
+
 
 
 export const deleteProduct = async (req, res) => {
@@ -128,7 +137,7 @@ export const getProductsByCategory = async (req, res) => {
     try {
         const products = await Product.find({ category });
 
-        res.json(products);
+        res.json({products});
     }
     catch (error) {
         console.log("Error in get products by category controller", error);
@@ -138,7 +147,7 @@ export const getProductsByCategory = async (req, res) => {
 
 export const toggleFeaturedProduct = async (req, res) => {
     try {
-        const product = await Product.findById(req.paramas.id);
+        const product = await Product.findById(req.params.id);
 
         if (product) {
             product.isFeatured = !product.isFeatured;

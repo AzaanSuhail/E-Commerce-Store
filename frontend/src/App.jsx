@@ -18,17 +18,17 @@ import SignUpPage from "./pages/SignupPage";
 
 function App() {
 	const { user, checkAuth, checkingAuth } = useUserStore();
-	// const { getCartItems } = useCartStore();
+	const { getCartItems } = useCartStore();
 
 	useEffect(() => {
 		checkAuth();
 	}, [checkAuth]);
 
-	// useEffect(() => {
-	// 	if (!user) return;
+	useEffect(() => {
+		if (!user) return;
 
-	// 	getCartItems();
-	// }, [getCartItems, user]);
+		getCartItems();
+	}, [getCartItems, user]);
 
 	if (checkingAuth) return <LoadingSpinner />;
 
@@ -45,7 +45,7 @@ function App() {
 			<div className='relative z-50 pt-20'>
 				<Navbar />
         
-        //^ Only one route will be active at a time
+        {/* //^ Only one route will be active at a time */}
 				<Routes>
 					<Route path='/' element={<HomePage />} />
 					<Route path='/signup' element={!user ? <SignUpPage />  : <Navigate to='/' />} />

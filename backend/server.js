@@ -16,7 +16,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(express.json()) //it allows to parse the body of the request
+app.use(express.json({limit: "10mb"})); //& it allows to parse the body of the request & now we can upload the image upto 50mb
 app.use(cookieParser());
 
 
