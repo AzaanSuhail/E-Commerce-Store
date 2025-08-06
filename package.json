@@ -4,11 +4,10 @@
 	"description": "",
 	"main": "backend/server.js",
 "scripts": {
-  "dev": "nodemon backend/server.js",
-  "start": "node backend/server.js",
-  "build": "npm install && npm install --prefix frontend/frontend && npx --prefix frontend/frontend vite build"
-}
-,
+		"dev": "nodemon backend/server.js",
+		"start": "node backend/server.js",
+		"build": "npm install && npm install --prefix frontend && npm run build --prefix frontend"
+	},
 	"keywords": [],
 	"author": "",
 	"type": "module",
