@@ -1,4 +1,4 @@
-// import Product from "../models/product.model.js";
+import Product from "../models/product.model.js";
 
 // export const getCartProducts = async (req, res) => {
 // 	try {
@@ -17,179 +17,116 @@
 // 	}
 // };
 
-// export const addToCart = async (req, res) => {
-// 	try {
-// 		const { productId } = req.body;
-// 		const user = req.user;
-
-// 		const existingItem = user.cartItems.find((item) => item.id === productId);
-// 		if (existingItem) {
-// 			existingItem.quantity += 1;
-// 		} else {
-// 			user.cartItems.push(productId);
-// 		}
-
-// 		await user.save();
-// 		res.json(user.cartItems);
-// 	} catch (error) {
-// 		console.log("Error in addToCart controller", error.message);
-// 		res.status(500).json({ message: "Server error", error: error.message });
-// 	}
-// };
-
-// export const removeAllFromCart = async (req, res) => {
-// 	try {
-// 		const { productId } = req.body;
-// 		const user = req.user;
-// 		if (!productId) {
-// 			user.cartItems = [];
-// 		} else {
-// 			user.cartItems = user.cartItems.filter((item) => item.id !== productId);
-// 		}
-// 		await user.save();
-// 		res.json(user.cartItems);
-// 	} catch (error) {
-// 		res.status(500).json({ message: "Server error", error: error.message });
-// 	}
-// };
-
-// export const updateQuantity = async (req, res) => {
-// 	try {
-// 		const { id: productId } = req.params;
-// 		const { quantity } = req.body;
-// 		const user = req.user;
-// 		const existingItem = user.cartItems.find((item) => item.id === productId);
-
-// 		if (existingItem) {
-// 			if (quantity === 0) {
-// 				user.cartItems = user.cartItems.filter((item) => item.id !== productId);
-// 				await user.save();
-// 				return res.json(user.cartItems);
-// 			}
-
-// 			existingItem.quantity = quantity;
-// 			await user.save();
-// 			res.json(user.cartItems);
-// 		} else {
-// 			res.status(404).json({ message: "Product not found" });
-// 		}
-// 	} catch (error) {
-// 		console.log("Error in updateQuantity controller", error.message);
-// 		res.status(500).json({ message: "Server error", error: error.message });
-// 	}
-// };
-
-
-import Product from "../models/product.model.js";
-
-// EFFICIENT & CORRECT: Fetches full product details for items in cart
 export const getCartProducts = async (req, res) => {
-    try {
-        // Create a map of quantities for quick, efficient lookup
-        const quantityMap = req.user.cartItems.reduce((map, item) => {
-            map[item.productId] = item.quantity;
-            return map;
-        }, {});
+	try {
+		// 1. Check if user exists and has cartItems
+		if (!req.user) {
+			return res.status(401).json({ message: "User not authenticated" });
+		}
 
-        const productIds = req.user.cartItems.map(item => item.productId);
+		// 2. Handle case where cartItems doesn't exist or is empty
+		if (!req.user.cartItems || !Array.isArray(req.user.cartItems) || req.user.cartItems.length === 0) {
+			return res.status(200).json([]); // Explicitly return empty array
+		}
 
-        const productsFromDB = await Product.find({ _id: { $in: productIds } });
+		// 3. Safely convert cartItems to product IDs
+		const cartItemIds = req.user.cartItems.map(item => {
+			// Handle both string IDs and object IDs with quantity
+			if (typeof item === 'object' && item._id) return item._id;
+			if (typeof item === 'object' && item.id) return item.id;
+			return item; // Assume it's already an ID string
+		}).filter(Boolean); // Remove any undefined/null values
 
-        // Combine product details with their correct quantity from the map
-        const cartProducts = productsFromDB.map((product) => ({
-            ...product.toObject(), // Get a plain JS object
-            quantity: quantityMap[product._id.toString()]
-        }));
+		// 4. Get products from database
+		const products = await Product.find({ _id: { $in: cartItemIds } });
 
-        res.json(cartProducts);
+		// 5. Create quantity map (handles both object and array formats)
+		const quantityMap = {};
+		req.user.cartItems.forEach(item => {
+			const id = (typeof item === 'object' ? item._id || item.id : item)?.toString();
+			if (id) {
+				quantityMap[id] = (typeof item === 'object' ? item.quantity : 1) || 1;
+			}
+		});
 
-    } catch (error) {
-        console.error("Error in getCartProducts controller:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
+		// 6. Format response with quantities
+		const cartItems = products.map(product => ({
+			...product.toJSON(),
+			quantity: quantityMap[product._id.toString()] || 1
+		}));
+
+		res.status(200).json(cartItems);
+	} catch (error) {
+		console.error("Error in getCartProducts:", error);
+		// Return empty array on error to prevent frontend crashes
+		res.status(500).json({
+			message: "Error retrieving cart items",
+			error: error.message,
+			cartItems: [] // Fallback empty array
+		});
+	}
 };
 
-// CORRECTED: Always adds a product object, never a string
 export const addToCart = async (req, res) => {
-    try {
-        const { productId } = req.body;
-        const user = req.user;
+	try {
+		const { productId } = req.body;
+		const user = req.user;
 
-        // Find item by productId
-        const existingItem = user.cartItems.find(
-            (item) => item.productId.toString() === productId
-        );
+		const existingItem = user.cartItems.find((item) => item.id === productId);
+		if (existingItem) {
+			existingItem.quantity += 1;
+		} else {
+			user.cartItems.push(productId);
+		}
 
-        if (existingItem) {
-            existingItem.quantity += 1;
-        } else {
-            // CRITICAL FIX: Push the full object, not just the ID
-            user.cartItems.push({ productId: productId, quantity: 1 });
-        }
-
-        await user.save();
-        res.status(200).json(user.cartItems);
-    } catch (error) {
-        console.error("Error in addToCart controller:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
+		await user.save();
+		res.json(user.cartItems);
+	} catch (error) {
+		console.log("Error in addToCart controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
 };
 
-// CORRECTED: Updates quantity or removes item correctly
-export const updateQuantity = async (req, res) => {
-    try {
-        const { id: productId } = req.params;
-        const { quantity } = req.body;
-        const user = req.user;
-
-        const existingItem = user.cartItems.find(
-            (item) => item.productId.toString() === productId
-        );
-
-        if (!existingItem) {
-            return res.status(404).json({ message: "Product not in cart" });
-        }
-        
-        // If quantity is 0 or less, remove the item
-        if (quantity <= 0) {
-            user.cartItems = user.cartItems.filter(
-                (item) => item.productId.toString() !== productId
-            );
-        } else {
-            existingItem.quantity = quantity;
-        }
-
-        await user.save();
-        res.status(200).json(user.cartItems);
-
-    } catch (error) {
-        console.error("Error in updateQuantity controller:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
-
-
-// CORRECTED: Removes one item or clears the entire cart
 export const removeAllFromCart = async (req, res) => {
-    try {
-        // Renamed for clarity: this ID is the item to remove
-        const { productIdToRemove } = req.body;
-        const user = req.user;
-
-        // If no specific product ID is provided, clear the entire cart
-        if (!productIdToRemove) {
-            user.cartItems = [];
-        } else {
-            // Filter out the specific product
-            user.cartItems = user.cartItems.filter(
-                (item) => item.productId.toString() !== productIdToRemove
-            );
-        }
-
-        await user.save();
-        res.status(200).json(user.cartItems);
-    } catch (error) {
-        console.error("Error in removeAllFromCart controller:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
+	try {
+		const { productId } = req.body;
+		const user = req.user;
+		if (!productId) {
+			user.cartItems = [];
+		} else {
+			user.cartItems = user.cartItems.filter((item) => item.id !== productId);
+		}
+		await user.save();
+		res.json(user.cartItems);
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
 };
+
+export const updateQuantity = async (req, res) => {
+	try {
+		const { id: productId } = req.params;
+		const { quantity } = req.body;
+		const user = req.user;
+		const existingItem = user.cartItems.find((item) => item.id === productId);
+
+		if (existingItem) {
+			if (quantity === 0) {
+				user.cartItems = user.cartItems.filter((item) => item.id !== productId);
+				await user.save();
+				return res.json(user.cartItems);
+			}
+
+			existingItem.quantity = quantity;
+			await user.save();
+			res.json(user.cartItems);
+		} else {
+			res.status(404).json({ message: "Product not found" });
+		}
+	} catch (error) {
+		console.log("Error in updateQuantity controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+
